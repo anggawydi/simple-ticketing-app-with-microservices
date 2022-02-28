@@ -5,6 +5,8 @@ import { NotFoundError } from '../errors/not-found-error';
 import { requiredAuth } from '../middlewares/require-auth';
 import { NotAuthorizedError } from '../errors/not-authorized-error';
 import { Ticket } from '../models/ticket';
+import { TicketUpdatedPublisher } from '../events/publishers/ticket-updated-publisher';
+import { natsWrapper } from '../nats-wrapper';
 
 const router = express.Router();
 
@@ -35,6 +37,12 @@ router.put(
       price,
     });
     await ticket.save();
+    new TicketUpdatedPublisher(natsWrapper.client).publish({
+      id: ticket.id,
+      title: ticket.title,
+      price: ticket.price,
+      userId: ticket.userId,
+    });
 
     res.send(ticket);
   }
